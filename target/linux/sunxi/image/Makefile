@@ -6,7 +6,9 @@
 include $(TOPDIR)/rules.mk
 include $(INCLUDE_DIR)/image.mk
 
+FAT16_BLOCK_SIZE=512
 FAT32_BLOCK_SIZE=1024
+FAT16_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT16_BLOCK_SIZE))))
 FAT32_BLOCKS=$(shell echo $$(($(CONFIG_SUNXI_SD_BOOT_PARTSIZE)*1024*1024/$(FAT32_BLOCK_SIZE))))
 
 DEVICE_VARS := SUNXI_DTS SUNXI_DTS_DIR
@@ -14,9 +16,19 @@ KERNEL_LOADADDR:=0x40008000
 
 define Build/sunxi-sdcard
 	rm -f $@.boot
-	mkfs.fat $@.boot -C $(FAT32_BLOCKS)
+	#mkfs.fat $@.boot -s 4 -r 512  -n boot -F 16 -C $(FAT16_BLOCKS) 
+	mkfs.fat $@.boot -F 16 -C $(FAT16_BLOCKS)
 
-	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot.scr
+	#rm -rf ext4
+	#mkdir -p ext4/dtb
+	#cp $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ext4/boot.scr
+	#cp $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot-mmc.scr ext4/boot-mmc.scr
+	#cp $(DTS_DIR)/$(SUNXI_DTS).dtb ext4/dtb
+	#cp $(IMAGE_KERNEL) ext4/uImage
+	#mkfs.ext2 -L boot -O ^64bit -d ext4 $@.boot $(FAT32_BLOCKS)
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot.scr ::boot-sd.scr
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-uEnv.txt ::uEnv.txt
+	mcopy -i $@.boot $(STAGING_DIR_IMAGE)/$(DEVICE_NAME)-boot-mmc.scr ::boot.scr
 	mcopy -i $@.boot $(DTS_DIR)/$(SUNXI_DTS).dtb ::dtb
 	mcopy -i $@.boot $(IMAGE_KERNEL) ::uImage
 	./gen_sunxi_sdcard_img.sh $@ \
