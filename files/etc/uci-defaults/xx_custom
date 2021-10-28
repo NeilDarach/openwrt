@@ -1,0 +1,77 @@
+. ./secrets.crypt
+briot=$(uci add network device)
+uci -q batch << EOI
+set network.lan.ipaddr='192.168.4.1'
+set network.iot=interface
+set network.iot.proto='static'
+set network.iot.netmask='255.255.255.0'
+set network.iot.ipaddr='192.168.5.1'
+set network.iot.device='br-iot'
+set network.wwan=interface
+set network.wwan.device='usb0'
+set network.wwan.proto='dhcp'
+set network.$briot.name='br-iot'
+set network.$briot.type='bridge'
+add_list network.$briot.ports='eth1.5'
+commit network
+EOI
+
+uci -q batch << EOI
+set wireless.@wifi-device[0].disabled='1'
+commit wireless
+EOI
+
+/etc/init.d/network restart
+
+uci -q batch << EOI
+uci set system.@system[0].hostname='arde'
+uci set system.@system[0].timezone='Europe/London'
+uci commit system
+EOI
+
+/etc/init.d/system restart
+
+line=$(uci show firewall | grep "name='wan'")
+line=${line#*[}
+index=${line%]*}
+uci -q batch << EOI
+add_list firewall.@zone[$index].network='wwan'
+commit firewall
+EOI
+/etc/init.d/firewall restart
+
+
+uci -q batch << EOI
+set dhcp.@dnsmasq[0].dhcphostsfile='/etc/dnsmasq-hosts'
+set dhcp.@dhcp[0].port='0'
+set dhcp.@dhcp[0].localuse='0'
+
+set dhcp.lan.interface='lan'
+add_list dhcp.lan.dhcp_option='option:router,192.168.4.1'
+add_list dhcp.lan.dhcp_option='option:dns-server,192.168.4.1'
+add_list dhcp.lan.dhcp_option='option:domain-name,darach.org.uk'
+set dhcp.lan.start='50'
+set dhcp.lan.limit='200'
+
+set dhcp.iot='dhcp'
+set dhcp.iot.interface='iot'
+add_list dhcp.iot.dhcp_option='option:router,192.168.5.1'
+add_list dhcp.iot.dhcp_option='option:dns-server,192.168.5.1'
+add_list dhcp.iot.dhcp_option='option:domain-name,iot'
+set dhcp.iot.start='50'
+set dhcp.iot.limit='200'
+
+commit dhcp
+EOI
+/etc/init.d/dnsmasq restart
+
+chown -R root:root /root/.ssh
+chmod 700 /root/.ssh
+chmod 600 /root/.ssh/authorized_keys
+chown root:root /etc/ssh/*
+chmod 600 /etc/ssh/ssh*key
+chmod 644 /etc/ssh/ssh*key.pub
+
+echo "color evening" >> /usr/share/vim/vimrc
+
+

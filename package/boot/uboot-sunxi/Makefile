@@ -356,6 +356,9 @@ define Build/InstallDev
 	$(CP) $(PKG_BUILD_DIR)/$(UBOOT_IMAGE) $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-u-boot-with-spl.bin
 	mkimage -C none -A arm -T script -d uEnv-$(UENV).txt \
 		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot.scr
+	mkimage -C none -A arm -T script -d uEnv-mmc.txt \
+		$(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-boot-mmc.scr
+	$(CP) uEnv.txt $(STAGING_DIR_IMAGE)/$(BUILD_DEVICES)-uEnv.txt
 endef
 
 define Package/u-boot/install/default
