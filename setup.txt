@@ -1,0 +1,15 @@
+Download the seed config from
+	https://downloads.openwrt.org/releases/21.02.1/targets/sunxi/cortexa7/config.buildinfo
+so that kernel version numbers match for opkg installs
+
+copy config.buildinfo to .config
+
+make defconfig
+make menuconfig
+	to reset the board to only nanopi r1, expand the root partition
+
+scripts/diffconfig .config > config.base
+
+copy config.base to .config
+append config.arde to .config
+make defconfig
